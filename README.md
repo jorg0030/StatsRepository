@@ -1,0 +1,2 @@
+# StatsRepository
+For stats class
