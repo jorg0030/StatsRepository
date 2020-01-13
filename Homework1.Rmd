@@ -1,0 +1,90 @@
+**Alexis Jorgensen: Homework 1**
+
+# Part 1
+
+## Question 1: Create a new vector in R with data for each strain
+```{r}
+StrainA=c(0.17,0.20,0.13,0.20,0.24,0.25,0.15,0.21,0.21)
+StrainB=c(0.47,0.21,0.34,0.32,0.33,0.29,0.18,0.2,0.25)
+CommonStrain=c(0.44,0.33,0.37,0.33,0.31,0.27,0.22,0.30,0.28)
+test
+```
+
+
+## Question 2-3: What is the difference between the meansof the two transgenic strains. What is the difference between the means of the common strain and transgenic strain A
+```{r}
+mean(StrainA)-mean(StrainB)
+mean(CommonStrain)-mean(StrainA)
+```
+
+## 4. Create a histogram of the hydrogen peroxide concentrations in the common strain.
+```{r}
+hist(CommonStrain,las=1,main="Common Strain",xlab=expression(paste("Hydrogen peroxide concentration (", mu, "moles/g)")),col="blue")
+```
+
+## 5 Enter each column as a vector in R, and collect these into a single data frame. Name the hydrogen peroxide column 'Peroxide' and the fungal growth rate column 'Growth.rate'.
+```{r}
+Peroxide<-c(0.27,0.21,0.34,0.32,0.24,0.29,0.18,0.20,0.29)
+Growth.rate<-c(1.79,1.01,1.71,1.89,1.41,1.15,1.13,1.20,1.10)
+DataFrame<-data.frame(Peroxide,Growth.rate)
+```
+
+## 6. Create a scatter plot of fungal growth rate versus peroxide concentration from the newly created data frame. Make sure to label the plot properly (label the axes and make sure to provide the measurement units).
+```{r}
+plot(DataFrame, las=1,xlab=expression(paste("Hydrogen peroxide concentration (", mu, "moles/g)")), ylab="Fungal Growth Rate (cm/day)")
+```
+
+The fungal growth rate appears to be positiively correlated with increasing levels of hydrogen peroxide. This does not support the hypothesis that plants use peroxide to defend against fungal attack.
+
+# Part 2
+
+## 8. Re-create this table in Excel and save as a comma separated values file. Read the data into R using the read.csv function.
+```{r}
+Turtle <- read.csv("Turtle.csv")
+```
+
+## 9. Use the table function to create a contingency table showing the number of aborted and successful nesting attempts for each species.
+```{r}
+table(Turtle)
+```
+
+Question 10.Make and label a grouped barplot that represents the nesting patterns for all three turtle species. Color the bars for successful green and the bars for aborted red. Make sure to label the axes.
+```{r}
+barplot(table(Turtle),beside=TRUE,xlab="Species",ylab="Number of Nests", col=c("red","darkgreen"),legend.text = T,args.legend = list(x = "topleft", bty = "n"))
+```
+
+## Question 11. Determine the mean and standard deviation of successful nesting events among all marine turtles.
+```{r}
+table(Turtle)
+sd(table(Turtle)[2,]
+  )
+mean(table(Turtle)[2,])
+```
+
+## Questions 12. Calculate the proportion of failed nesting attempts for each species. Based on this, which species would you choose as needing the greatest conservation effort?
+```{r}
+Turtle2<-(table(Turtle))
+#Hawksbill
+table(Turtle)[1,1]/sum(table(Turtle)[,1])
+#Leatherback
+table(Turtle)[1,2]/sum(table(Turtle)[,2])
+#Olive Ridley
+table(Turtle)[1,3]/sum(table(Turtle)[,3])
+```
+Hawksbill: 43%, Leatherback: 33%, Olive Ridley: 20% Nest failure. Conservation efforts should be most focussed on Hawksbill turtles as they have the highest proportion of nest failure.
+ 
+## 13. Enter data into Excel and import the file to R.
+```{r}
+TurtleEggs <- read.csv("TurtleEggs.csv")
+
+```
+
+## 14. Create a boxplot comparing different turtle species and the number of eggs found in the nest. Don't forget to label your axes.
+```{r}
+boxplot(TurtleEggs[,2:4], las=1,xlab="Species", ylab="Number of Eggs/Nest",main="Number of Eggs by Species", col="gold",ylim=c(80,150))
+```
+
+## 15. Create a scatter plot of the number of Leatherback turtle eggs (y-axis) against the number of Hawksbill turtle eggs (x-axis) across all beach sections.
+```{r}
+plot(TurtleEggs$Hawksbill,TurtleEggs$Leatherback, main="Mean Eggs/nest Across Species",xlab="Mean Eggs/Nest (Hawksbill)",ylab="Mean Eggs/Nest (Leatherback)")
+```
