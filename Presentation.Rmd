@@ -1,0 +1,173 @@
+---
+title: "PresentationCode"
+output: html_document
+---
+
+
+#Part 1a: Detecting Spatial Autocorrelation with a Semivariogram
+
+A semivariogram gives us a visual representation of autocorrelation. They are simple to make with the geoR package.
+
+
+```{r}
+install.packages("geoR")
+```
+```{r}
+library(geoR)
+```
+
+First, we need to upload a dataset with spatial information.
+```{r}
+Bird<-read.csv("Bird.csv")
+Bird[1:5,]
+```
+
+we can now use the variog() function. The two arguments we need are coords= (spatial data,LatLong for us), and data= (the variable we want to check for autocorrelation).
+
+
+```{r}
+Bird.Vario<-variog(coords=Bird[4:5],data=Bird$Bird_diversity)
+
+plot(Bird.Vario, type="b")
+```
+
+Semivarience (a measure of the dissimilarity between points) increases steadily from distance 0 to around 1.4. This is a clear indication of spatial autocorrelation.
+
+Above a distance of 1.5 semivariance has an inconsistent pattern. There is probably not significant autocorrelation above this point.
+
+
+
+#Part 1b: Detecting spatial autocorrelation with Moran's Index
+
+Now lets use Moran's index to test for autocorrelation of the same variable. Remeber our data set?
+
+```{r}
+Bird[1:5,]
+```
+
+This data isn't enough. We need to add a measure of how close each site is to eachother. This is called an inverse distance matrix, and takes a few steps.
+
+First, lets create a normal distance matrix
+
+```{r}
+Bird.Distance<-as.matrix(dist(cbind(Bird$Lon_x,Bird$Lat_y)))
+Bird.Distance[1:5,1:5]
+
+```
+
+Looks good, but in this matrix the larger values indicate sites that are furhter apart. We want to know which sites are closest together (the inverse). To make an inverse martix, divide everyhting by one.
+
+```{r}
+
+Bird.Inverse.Distance<-1/Bird.Distance
+Bird.Inverse.Distance[1:5,1:5]
+
+```
+Uh oh, we have several infinite values. That will mess with all our calculations. We'd better get rid of them by setting the diagonals to zero.
+
+```{r}
+diag(Bird.Inverse.Distance)=0
+Bird.Inverse.Distance[1:5,1:5]
+
+```
+
+Much better. Now we have matrix with a measure of the distance between every sample site in our data set. The bigger the number, the closer the sites are.
+
+Now we can calculate Morans Index, a measure of spatial autocorrelation between sites. First, we need to install and load the "ape" R package
+
+```{r}
+install.packages("ape")
+```
+```{r}
+library(ape)
+```
+
+This gives us access to the Morans Index function. Moran.I(measured values, inverse distance matrix)
+
+
+```{r}
+Moran.I(Bird$Bird_diversity,Bird.Inverse.Distance)
+```
+The most important values for out purposes are "$observed" and"$p.value"
+
+$Observed = Moran's Index. It is definately not zero meaning that there is autocorrelation.~46% in fact
+
+$p.value indicates signficance. p < 0.05 so the Moran's I (and hense, autocorrelation) is signifcant for bird diversity
+
+We can also use Moran's Index to test for autocorrelations in the residuals of linear models. Lets say, we want to perform a linear regression to determine the relationship between bird diversity and tree diversity.
+
+```{r}
+plot(Bird$Bird_diversity,Bird$Tree_diversity)
+
+Linear.Model<-glm(Bird$Tree_diversity~Bird$Bird_diversity)
+
+abline(Linear.Model, col="blue")
+
+```
+
+Now that you have created a model, use Moran's I to test for autocorrelation with the following code
+
+```{r}
+Moran.I(Linear.Model$residuals, Bird.Inverse.Distance)
+```
+In this case, $observed is almost equal to $expected meaning that autocorrelation is nearly zero, and p > 0.05 indicating that it is not signifcant (ie no autoregression) 
+
+
+
+# Part 2: Correcting for Spatial Autocorrelation in linear models - Autocovariate modelling
+
+Ok, lets upload a new data set.
+
+```{r}
+Tree<-read.csv("Tree.csv")
+Tree[1:5,]
+```
+
+
+Lets make a linear model examing the relationship between tree height and age
+
+```{r}
+Model1<-glm(Tree$heights~Tree$age)
+
+
+Tree.Distance<-as.matrix(dist(cbind(Tree$x,Tree$y)))
+Tree.Inverse.Distance<-1/Tree.Distance
+diag(Tree.Inverse.Distance)=0
+
+Moran.I(Model1$residuals,Tree.Inverse.Distance)
+```
+
+There is signficant autocorrelation in the residuals of model one. In order to reduce this, we want to calculate the autocovariate values for the data and add them to the model.
+
+First, we need to install and load a couple of packages
+```{r}
+install.packages("sp")
+install.packages("spdep")
+```
+
+```{r}
+library(sp)
+library(spdep)
+```
+
+This alows us to access the autocov_dist() function which we will use later.
+
+
+Now lets calculate the autocovariance
+```{r}
+?autocov_dist
+
+Autocovariate<-autocov_dist(Model1$residuals,nbs = 13, as.matrix(Tree[2:3]))
+```
+
+NEED TO FIGURE OUT WHAT NEIGHBOURHOOD RADIUS SHOULD BE
+
+Now we can make a new linear model taking our autocovariates into account and calculate out new Morans Index.
+
+```{r}
+Model2<-glm(Tree$heights~Tree$age+Autocovariate)
+Moran.I(Model2$residuals,Tree.Inverse.Distance)
+```
+There is still some autocorrelation present in the residuals of model two. However, both $observed and the signifcance level has been noticably decreased
+
+
