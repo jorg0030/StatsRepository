@@ -1,0 +1,91 @@
+---
+title: "PresentationCode"
+output: html_document
+---
+
+# Part 1a: Detecting spatial autocorrelation in a single variable with Moran's Index
+
+We need to uplaod a data set with spatial inforamtion
+
+```{r}
+Bird<-read.csv("Bird.csv")
+Bird[1:5,]
+```
+
+This data isn't enough. We need to add a measure of how close each site is to eachother. This is called an inverse distance matrix, and takes a few steps.
+
+First, lets create a normal distance matrix
+
+```{r}
+Bird.Distance<-as.matrix(dist(cbind(Bird$Lon_x,Bird$Lat_y)))
+Bird.Distance[1:5,1:5]
+
+```
+
+Looks good, but in this matrix the larger values indicate sites that are furhter apart. We want to know which sites are closest together (the inverse). To make an inverse martix, divide everyhting by one.
+
+```{r}
+
+Bird.Inverse.Distance<-1/Bird.Distance
+Bird.Inverse.Distance[1:5,1:5]
+
+```
+Uh oh, we have several infinite values. That will mess with all our calculations. We'd better get rid of them by setting the diagonals to zero.
+
+```{r}
+diag(Bird.Inverse.Distance)=0
+Bird.Inverse.Distance[1:5,1:5]
+```
+
+Much better. Now we have matrix with a measure of the distance between every sample site in our data set. The bigger the number, the closer the sites are.
+
+Now we can calculate Morans Index, a measure of spatial autocorrelation between sites. First, we need to install and load the "ape" R package
+
+```{r}
+install.packages("ape")
+```
+```{r}
+library(ape)
+?Moran.I
+```
+
+This gives us access to the Morans Index function. Moran.I(variable you want to test, inverse distance matrix)
+
+
+```{r}
+Moran.I(Bird$Bird_diversity,Bird.Inverse.Distance)
+```
+
+
+We can also use Moran's Index to test for autocorrelations in the residuals of linear models. Lets say, we want to perform a linear regression to determine the relationship between bird diversity and tree diversity.
+
+
+# Part 1b: determining Moran's index for the residuals of a linear model
+
+```{r}
+plot(Bird$Bird_diversity,Bird$Tree_diversity)
+
+Linear.Model<-glm(Bird$Tree_diversity~Bird$Bird_diversity)
+
+summary(Linear.Model)
+
+abline(Linear.Model, col="blue")
+
+```
+
+Your linear model includes the residuals for the data.
+
+```{r}
+Linear.Model$residuals
+```
+
+Now we can again use the Moran.I function to test for autocorrelation with the following code:
+
+```{r}
+Moran.I(Linear.Model$residuals, Bird.Inverse.Distance)
+```
+
+In this case, $observed is almost equal to $expected meaning that autocorrelation is nearly zero, and p > 0.05 indicating that it is not signifcant (ie no autoregression) 
+
+
+
